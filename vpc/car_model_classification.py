@@ -7,33 +7,44 @@
 
 
 
-# In[56]:
+# In[1]:
 
 
 # !nvidia-smi
 
 
-# In[74]:
+# In[17]:
 
 
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-from datasets import load_dataset, Dataset, DatasetDict
+from datasets import load_dataset, DatasetDict
 from einops import rearrange, einsum
 
 import torch.nn as nn
+from torch.utils.data import DataLoader, Dataset, TensorDataset
 import torchvision.models as models
 from torchvision.models import resnet18
+from torchvision import transforms
 
 
-# In[75]:
+# In[18]:
 
+
+# internal_model = models.resnet18
+# internal_weights = models.ResNet18_Weights.IMAGENET1K_V1
+
+internal_model = models.resnet34
+internal_weights = models.ResNet34_Weights.IMAGENET1K_V1
+
+# internal_model = models.resnet50
+# internal_weights = models.ResNet50_Weights.IMAGENET1K_V1
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# In[76]:
+# In[24]:
 
 
 # Load images
@@ -48,12 +59,12 @@ y_test = np.load('y_test.npy')
 # plt.axis('off')
 # plt.show()
 
-# convert to torch
-x_train = torch.from_numpy(x_train)
-x_test = torch.from_numpy(x_test)
+# # convert to torch
+# x_train = torch.from_numpy(x_train)
+# x_test = torch.from_numpy(x_test)
 
-y_train = torch.from_numpy(y_train)
-y_test = torch.from_numpy(y_test)
+# y_train = torch.from_numpy(y_train)
+# y_test = torch.from_numpy(y_test)
 
 print('X_train shape:\t' ,x_train.shape)
 print('Y_train shape\t' ,y_train.shape)
@@ -69,47 +80,69 @@ test_cut = 100
 x_test = x_test[:test_cut]
 y_test = y_test[:test_cut]
 
-
-train_dataset = Dataset.from_dict({'image': x_train, 'label': y_train}).with_format('torch')
-test_dataset = Dataset.from_dict({'image': x_test, 'label': y_test}).with_format('torch')
-
-dataset = DatasetDict({'train': train_dataset, 'test': test_dataset})
+# print('X_train shape:\t' ,x_train.shape)
+# print('X_train dtype:\t' ,x_train.dtype)
+# print('X_train type:\t' ,type(x_train))
 
 
-# In[77]:
+# In[ ]:
 
 
-transform_fn = models.ResNet18_Weights.IMAGENET1K_V1.transforms
 
-def process_data(sample):
-    sample['image'] = sample['image'].to(device)
-    sample['label'] = sample['label'].to(device)
-    sample = rearrange(sample, 'h w c -> c h w')
-    sample = transform_fn(sample)
-    return sample
 
-# # cuda
-# dataset = dataset.map(lambda x: {'image': x['image'].to(device)})
 
-# # rearrange
-# dataset = dataset.map(lambda x: {'image': rearrange(x['image'], 'h w c -> c h w')})
+# In[40]:
 
-# # normalize
-# dataset = dataset.map(lambda x: {'image': transform_fn(x['image'])})
 
-dataset = dataset.map(process_data)
+transform_fn = internal_weights.transforms()
+convert_to_tensor = transforms.ToTensor()
 
-train_loader = torch.utils.data.DataLoader(dataset['traºin'], batch_size=32, shuffle=False)
-test_loader = torch.utils.data.DataLoader(test_dataset['test'], batch_size=32, shuffle=True)
+print('Transforms:\n', transform_fn)
+
+def process_image(image):
+    image = convert_to_tensor(image)
+    # image = rearrange(image, 'h w c -> c h w')
+    image = transform_fn(image)
+    return image
+
+# transform images
+x_train_transformed = list(map(process_image, x_train))
+x_test_transformed = list(map(process_image, x_test))
+
+# stack images
+x_train_tensor = torch.stack(x_train_transformed) #.to(device)
+x_test_tensor = torch.stack(x_test_transformed) #.to(device)
+
+# convert labels to tensor
+y_train_tensor = torch.tensor(y_train) #.to(device)
+y_test_tensor = torch.tensor(y_test) #.to(device)
+
+# add dimension to labels
+# y_train_tensor = y_train_tensor.unsqueeze(1)
+# y_test_tensor = y_test_tensor.unsqueeze(1)
+
+# TensorDataset
+train_data = TensorDataset(x_train_tensor, y_train_tensor)
+test_data = TensorDataset(x_test_tensor, y_test_tensor)
+
+# DataLoader
+batch_size = 32
+train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+
+
+# In[41]:
+
+
+sample, label = next(iter(train_loader))
+print('Sample shape:', sample.shape)
+print('Label shape:', label.shape)
 
 
 # ### Model
 
-# In[68]:
+# In[43]:
 
-
-internal_model = models.resnet18
-internal_weights = models.ResNet18_Weights.IMAGENET1K_V1
 
 class BiLinearModel(nn.Module):
     def __init__(self, num_classes):
@@ -123,7 +156,11 @@ class BiLinearModel(nn.Module):
         self.cnn2 = nn.Sequential(*list(self.cnn2.children())[:-2])
         
         # Define bilinear pooling
-        self.fc = nn.Linear(512*512, num_classes)
+        self.fc = nn.Sequential(
+            nn.Linear(512*512, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_classes)
+        )
     
     def forward(self, x):
         x1 = self.cnn1(x)
@@ -149,20 +186,23 @@ class BiLinearModel(nn.Module):
         return x
 
 model = BiLinearModel(num_classes=20).to(device)
-model(torch.randn(1, 3, 224, 224)).shape
+
+in_tensor = torch.randn(1, 3, 224, 224).to(device)
+model(in_tensor).shape
 
 
-# In[65]:
+# In[ ]:
 
 
 
 
 
-# In[66]:
+# In[45]:
 
 
 import torch.optim as optim
 from torch.optim import lr_scheduler
+from tqdm import tqdm 
 
 # Freeze the weights of the pre-trained models
 for param in model.cnn1.parameters():
@@ -180,13 +220,19 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     model.train()
     for epoch in range(num_epochs):
         running_loss = 0.0
+        epoch_pbar = tqdm(enumerate(train_loader), total=len(train_loader))
         for sample in train_loader:
-            inputs, labels = sample['image'], sample['label']
+            image, label = sample
+            image, label = image.to(device), label.to(device)
             optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
+            outputs = model(image)
+            loss = criterion(outputs, label)
             loss.backward()
             optimizer.step()
+            # update progress bar
+            running_loss = loss.item()
+            epoch_pbar.set_description(f"Epoch {epoch}/{num_epochs - 1}, Loss: {running_loss:.4f}")
+            epoch_pbar.update()
         scheduler.step()
         print(f"Epoch {epoch}/{num_epochs - 1}, Loss: {loss.item()}")
     
