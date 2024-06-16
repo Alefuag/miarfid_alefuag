@@ -4,10 +4,10 @@ cnn_dropout: 0.0
 feat_dropout: 0.5
 freeze_weights:
   epochs: 15
-  lr: 1e-3
-  step_lr: 5
+  lr: 1e-2
+  step_lr: 10
 unfreeze_weights:
   epochs: 40
-  lr: 1e-5
+  lr: 1e-6
   step_lr: 20
 
