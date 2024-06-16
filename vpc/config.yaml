@@ -1,6 +1,7 @@
 
 batch_size: 16
-dropout: 0.5
+cnn_dropout: 0.5
+feat_dropout: 0.5
 freeze_weights:
   epochs: 10
   lr: 1e-8
