@@ -1,9 +1,9 @@
 
-batch_size: 32
+batch_size: 16
 freeze_weights:
   epochs: 10
   lr: 1e-7
-  step_lr: 5
+  step_lr: 10
 unfreeze_weights:
   epochs: 20
   lr: 1e-8
