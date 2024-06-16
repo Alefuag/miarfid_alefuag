@@ -7,7 +7,7 @@ freeze_weights:
   lr: 2e-4
   step_lr: 10
 unfreeze_weights:
-  epochs: 40
+  epochs: 60
   lr: 1e-7
   step_lr: 25
 
