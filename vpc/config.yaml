@@ -9,5 +9,5 @@ freeze_weights:
 unfreeze_weights:
   epochs: 40
   lr: 1e-7
-  step_lr: 15
+  step_lr: 25
 
