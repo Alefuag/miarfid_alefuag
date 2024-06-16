@@ -8,6 +8,6 @@ freeze_weights:
   step_lr: 5
 unfreeze_weights:
   epochs: 40
-  lr: 5e-6
+  lr: 1e-5
   step_lr: 15
 
