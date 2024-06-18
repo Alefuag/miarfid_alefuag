@@ -4,6 +4,9 @@
 *.tgz
 *.png
 
+vdd/datos/eimri_estadistica_basica_provincias_*.csv
+vdd/datos/eimri_frecuencias_provincias_*.csv
+vdd/tarea2/datos*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

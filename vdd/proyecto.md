@@ -1,4 +1,0 @@
-
-## Proyecto Visualización de Datos
-
-
