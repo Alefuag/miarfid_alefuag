@@ -40,17 +40,20 @@ def plot_lineplot(province_df, provincias, medida, year, absolute=False, figsize
     year_mask = province_df['year'] == year
     medida_mask = province_df['Estadisticos'] == medida
     
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=figsize)
 
     for provincia in provincias:
         provincia_mask = province_df['Provincia'] == provincia
         filtered_df = province_df[provincia_mask & medida_mask & year_mask]
         value_list = [filtered_df[mes].values for mes in months[:-1]]
         # unpack the list of lists
-        plt.plot(months[:-1], value_list, label=provincia, figsize=figsize)
+        plt.plot(months[:-1], value_list, label=provincia)
     
     if absolute:
-        plt.ylim(0, 5)
+        plt.ylim(0.9, 5)
+    
+    ax.set_title(f'{medida} {year}')
+
     plt.title(f'{medida} {year}')
     plt.ylabel('FWI')
     plt.xlabel('Mes')
@@ -72,5 +75,33 @@ def get_datos_provincia(province_df, year, mes, provincia):
         'mean' : filtered_df[filtered_df['Estadisticos'] == 'Media'][mes].iloc[0],
         'max' : filtered_df[filtered_df['Estadisticos'] == 'Maximo'][mes].iloc[0],
     }
-    res = {(k, str(v)) for (k, v) in res.items()}
+    res = {k: str(v) for (k, v) in res.items()}
     return res
+
+def plot_pie_chart(province_df, provincia, medida, figsize=(12, 12)):
+    medida_mask = province_df['Estadisticos'] == medida
+    provincia_mask = province_df['Provincia'] == provincia
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    filtered_df = province_df[provincia_mask & medida_mask]
+
+    # ax = filtered_df.plot(
+    #     kind='pie',
+    #     y='Anual',
+    #     # ax=ax,
+    #     labels=filtered_df['year'],
+    #     autopct='%1.1f%%',
+    #     startangle=90,
+    #     legend=True,
+    #     fontsize=11
+    # )
+
+    plt.pie(filtered_df['Anual'], labels=filtered_df['year'], autopct='%1.1f%%', startangle=90, textprops={'fontsize': 11})
+
+    # add legend
+    plt.legend(title='Años', loc='upper right', bbox_to_anchor=(1.2, 1))
+
+    ax.set_title(f'{medida} en {provincia}. Años {filtered_df["year"].min()}-{filtered_df["year"].max()}')
+
+    return fig
