@@ -19,8 +19,8 @@ with st.spinner("Cargando datos..."):
     data = load_data('eimri_estadistica_basica_all.csv')
 
 def home_page():
-    st.title("FWI (Forest Weather Index) Visualization")
-    st.header("Visualización de Datos")
+    st.title("FWI Visualization Dashboard")
+    # st.header("Visualización de Datos")
 
     st.markdown(
         """
@@ -53,10 +53,15 @@ def home_page():
         """
     )
 
-    st.header("Enlace a las paginas")
-    st.page_link("pages/1_🗺_Map.py", label="Mapa", icon="🗺")
-    st.page_link("pages/2_📈_Line_Plot.py", label="Gráfico de Lineas", icon="📈")
-    st.page_link("pages/3_📊_Bar_Plot.py", label="Gráfico de Barras", icon="📊")
+    st.page_link("Home.py", label="Inicio", icon="🏠")
+    st.write("Donde podrás encontrar información sobre el proyecto y las funcionalidades del dashboard.")
+    st.page_link("pages/1_🗺_Mapa.py", label="Mapa", icon="🗺")
+    st.write("Visualiza el `FWI` en un mapa interactivo y explora los datos por provincia.")
+    st.page_link("pages/2_📈_Grafico_de_Lineas.py", label="Gráfico de Lineas", icon="📈")
+    st.write("Visualiza la evolución del `FWI` a lo largo del tiempo en diferentes provincias.")
+    st.page_link("pages/3_📊_Grafico_de_Barras.py", label="Gráfico de Barras", icon="📊")
+    st.write("Visualiza el `FWI` promedio por año en diferentes provincias.")
+
 
 
 

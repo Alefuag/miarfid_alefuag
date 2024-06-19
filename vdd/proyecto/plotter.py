@@ -80,7 +80,7 @@ def get_datos_provincia(province_df, year, mes, provincia):
     return res
 
 
-def plot_bar_chart(province_df, provincia, medida, figsize=(12, 12)):
+def plot_bar_chart(province_df, provincia, medida, figsize=(12, 12), absolute=False):
     medida_mask = province_df['Estadisticos'] == medida
     provincia_mask = province_df['Provincia'] == provincia
 
@@ -106,6 +106,9 @@ def plot_bar_chart(province_df, provincia, medida, figsize=(12, 12)):
     sns.barplot(x='year', y='Anual', hue='year', data=filtered_df, palette='flare', legend=False)
     plt.title(f'{medida} en {provincia}. Años {filtered_df["year"].min()}-{filtered_df["year"].max()}')
     plt.ylabel('FWI Anual')
+
+    if absolute:
+        plt.ylim(0.9, 5)
 
     # add legend
     # plt.legend(title='Años', loc='upper right', bbox_to_anchor=(1.2, 1))
