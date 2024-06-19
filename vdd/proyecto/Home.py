@@ -3,8 +3,8 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from loader import load_data, months
-from plotter import plot_fwi, plot_lineplot, plot_pie_chart, get_datos_provincia
+from loader import load_data, months, download_file
+from plotter import plot_fwi, plot_lineplot, plot_bar_chart, get_datos_provincia
 
 
 # Configuración de la página
@@ -22,21 +22,56 @@ def home_page():
     st.title("FWI (Forest Weather Index) Visualization")
     st.header("Visualización de Datos")
 
-    st.write("Este es un proyecto de visualización de datos de FWI (Forest Weather Index) en España.")
-    st.write("FWI es un índice que mide el riesgo de incendio forestal basado en las condiciones meteorológicas." + 
-             "Este índice varía de 0 a 5, siendo 5 el valor más alto y por lo tanto el mayor riesgo de incendio.")
+    st.markdown(
+        """
+        Bienvenido al **FWI Dashboard**, una plataforma interactiva diseñada para proporcionar una visualización clara y precisa del Fire Weather Index (FWI).
+        
+        El `FWI` es una herramienta para predecir y gestionar el riesgo de incendios forestales, basada en diversos factores meteorológicos.
+        
+        Este índice varía de `1` a `5`, siendo 5 el valor más alto y por lo tanto el mayor riesgo de incendio.
+        """
+    )
 
-    st.write("El conjunto de datos contiene información sobre el FWI en diferentes provincias de España." + 
+    st.markdown(
+        """
+        ## Funcionalidades del Dashboard
+        - Visualización interactiva de los componentes del `FWI`.
+        - Análisis temporal y espacial del riesgo de incendios.
+        - Descarga de datos para análisis adicional.
+        """
+        )
+
+    # st.write("")
+
+    st.write("El conjunto de datos contiene información sobre el `FWI` en diferentes provincias de España. " + 
              "Puedes visualizar los datos en un mapa y en gráficas de barras.")
     
-    st.write("Para navegar por la aplicación, utiliza el menú de la izquierda.")
+    st.write(
+        """
+        ## Comienza a explorar
+        Utiliza el menú de la izquierda para navegar por las diferentes secciones del dashboard y comenzar tu análisis del `FWI`.
+        """
+    )
+
+    st.header("Enlace a las paginas")
+    st.page_link("pages/1_🗺_Map.py", label="Mapa", icon="🗺")
+    st.page_link("pages/2_📈_Line_Plot.py", label="Gráfico de Lineas", icon="📈")
+    st.page_link("pages/3_📊_Bar_Plot.py", label="Gráfico de Barras", icon="📊")
+
+
 
 def map_page():
 
     # Título y descripción
-    st.title("FWI (Forest Weather Index) Visualization")
+    st.title("Forest Weather Index Visualization Tool")
 
     st.header("Mapas")
+
+    fig_size = (1, 0.6)
+    scale = st.sidebar.slider("Tamaño de la figura", min_value=0.1, max_value=1.0, value=0.6, step=0.1)
+    scale *= 10
+    fig_size = (fig_size[0]*scale, fig_size[1]*scale)
+    st.sidebar.markdown("---")
 
     # Sidebar para seleccionar el tipo de gráfico
     st.sidebar.header("Opciones de visualización")
@@ -46,27 +81,20 @@ def map_page():
     # mes selectbox
     mes = st.sidebar.selectbox("Selecciona el mes", months[:-1])
     # medida radio button
-    medida = st.sidebar.radio("Selecciona la medida", data['Estadisticos'].unique(), index=3)
+    medida = st.sidebar.radio("Selecciona la medida", pd.Series(data['Estadisticos'].unique()).str.replace("_", " "), index=3).replace(" ", "_")
+
 
     # absolute values
     st.sidebar.markdown("### Opciones adicionales")
     absolute = st.sidebar.toggle("Mostrar escala absoluta", value=False)
 
-    # st.write("Año seleccionado:", year)
-    # st.write("Mes seleccionado:", mes)
-    # st.write("Medida seleccionada:", medida)
-
-    fig_size = (1, 0.6)
-    scale = st.sidebar.slider("Tamaño de la figura", min_value=0.1, max_value=1.0, value=0.6, step=0.1)
-    scale *= 10
-    fig_size = (fig_size[0]*scale, fig_size[1]*scale)
-
-
     # plot map
-    fig = plot_fwi(data, year, medida, mes, absolute=absolute, figsize=fig_size)
+    fig, df = plot_fwi(data, year, medida, mes, absolute=absolute, figsize=fig_size)
 
     st.pyplot(fig, use_container_width=False)
 
+    download_file(df)
+    
     # choose provinces
     province = st.selectbox("Selecciona la provincia", data['Provincia'].unique())
 
@@ -85,9 +113,9 @@ def map_page():
         st.write(prov_data['max'], '/ 5')
 
 
-def bar_chart_page():
+def line_chart_page():
     # Título y descripción
-    st.title("FWI (Forest Weather Index) Visualization")
+    st.title("Forest Weather Index Visualization Tool")
 
     st.header("Gráficas de Barras")
 
@@ -116,16 +144,19 @@ def bar_chart_page():
         provinces.append('Valencia')
 
     # plot map
-    fig = plot_lineplot(data, provinces, medida, year, absolute=absolute, figsize=fig_size)
+    fig, df = plot_lineplot(data, provinces, medida, year, absolute=absolute, figsize=fig_size)
 
     st.pyplot(fig, use_container_width=False)
 
+    download_file(df)
 
-def pie_chart_page():
+
+def bar_chart_page():
     # Título y descripción
-    st.title("FWI (Forest Weather Index) Visualization")
+    st.title("Forest Weather Index Visualization Tool")
 
     st.header("Gráficas de Barras")
+
 
     fig_size = (1, 0.5)
     scale = st.sidebar.slider("Tamaño de la figura", min_value=0.1, max_value=1.0, value=0.6, step=0.1)
@@ -145,29 +176,31 @@ def pie_chart_page():
         provinces.append('Valencia')
 
     # plot map
-    fig = plot_pie_chart(data, provinces, medida, figsize=fig_size)
+    fig, df = plot_pie_chart(data, provinces, medida, figsize=fig_size)
 
     st.pyplot(fig, use_container_width=False)
-    
+
+    download_file(df)
+
+
 
 PAGES = {
     "Home": home_page,
-    "Mapa": map_page,
-    "Gráficas de Barras": bar_chart_page,
-    "Gráficas de Pastel": pie_chart_page
+    "FWI por territorio - Mapa": map_page,
+    "FWI Mensual - Gráfico de Líneas": line_chart_page,
+    "FWI Anual - Gráficas de Barras": bar_chart_page
 }
 
 
-st.sidebar.title("Navegación")
-selection = st.sidebar.radio("Ir a", list(PAGES.keys()))
-st.sidebar.markdown("---")
+# st.sidebar.title("Navegación")
+# selection = st.sidebar.radio("Ir a", list(PAGES.keys()))
+# st.sidebar.markdown("---")
 
-page = PAGES[selection]
-page()
+# page = PAGES[selection]
+# page()
 
-
+home_page()
 
 # Footer
 st.markdown("---")
-st.markdown("Hecho con :heart: por Alejandro")
-st.markdown("Puedes encontrar el código fuente en [GitHub](https://github.com/Alefuag/miarfid_alefuag/tree/main/vdd)")
+st.markdown("Código fuente en [GitHub](https://github.com/Alefuag/miarfid_alefuag/tree/main/vdd)")

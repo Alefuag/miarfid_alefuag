@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import geopandas as gpd
+import seaborn as sns
 
 from loader import months
 
@@ -33,7 +34,7 @@ def plot_fwi(province_df, year, medida, mes, absolute=False, figsize=(12, 12)):
 
     plt.ylabel('FWI')
 
-    return ax.get_figure()
+    return ax.get_figure(), filtered_df
 
 
 def plot_lineplot(province_df, provincias, medida, year, absolute=False, figsize=(12, 12)):
@@ -47,21 +48,21 @@ def plot_lineplot(province_df, provincias, medida, year, absolute=False, figsize
         filtered_df = province_df[provincia_mask & medida_mask & year_mask]
         value_list = [filtered_df[mes].values for mes in months[:-1]]
         # unpack the list of lists
-        plt.plot(months[:-1], value_list, label=provincia)
+        plt.plot(months[:-1], value_list, label=provincia, marker='o')
     
     if absolute:
         plt.ylim(0.9, 5)
     
     ax.set_title(f'{medida} {year}')
 
-    plt.title(f'{medida} {year}')
+    plt.title(f'FWI {medida} {year}')
     plt.ylabel('FWI')
     plt.xlabel('Mes')
     # rotate x labels
     plt.xticks(rotation=45)
     plt.legend()
 
-    return fig
+    return fig, filtered_df
 
 def get_datos_provincia(province_df, year, mes, provincia):
     year_mask = province_df['year'] == year
@@ -78,7 +79,8 @@ def get_datos_provincia(province_df, year, mes, provincia):
     res = {k: str(v) for (k, v) in res.items()}
     return res
 
-def plot_pie_chart(province_df, provincia, medida, figsize=(12, 12)):
+
+def plot_bar_chart(province_df, provincia, medida, figsize=(12, 12)):
     medida_mask = province_df['Estadisticos'] == medida
     provincia_mask = province_df['Provincia'] == provincia
 
@@ -97,11 +99,17 @@ def plot_pie_chart(province_df, provincia, medida, figsize=(12, 12)):
     #     fontsize=11
     # )
 
-    plt.pie(filtered_df['Anual'], labels=filtered_df['year'], autopct='%1.1f%%', startangle=90, textprops={'fontsize': 11})
+    # plt.pie(filtered_df['Anual'], labels=filtered_df['year'], autopct='%1.1f%%', startangle=90, textprops={'fontsize': 11})
+
+    # plt.bar(filtered_df['year'], filtered_df['Anual'], color='skyblue')
+
+    sns.barplot(x='year', y='Anual', hue='year', data=filtered_df, palette='flare', legend=False)
+    plt.title(f'{medida} en {provincia}. Años {filtered_df["year"].min()}-{filtered_df["year"].max()}')
+    plt.ylabel('FWI Anual')
 
     # add legend
-    plt.legend(title='Años', loc='upper right', bbox_to_anchor=(1.2, 1))
+    # plt.legend(title='Años', loc='upper right', bbox_to_anchor=(1.2, 1))
 
     ax.set_title(f'{medida} en {provincia}. Años {filtered_df["year"].min()}-{filtered_df["year"].max()}')
 
-    return fig
+    return fig, filtered_df

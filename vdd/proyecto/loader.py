@@ -59,6 +59,16 @@ def load_data(file_name):
     return processed_df
 
 
+
+def download_file(df, file_name='data.csv'):
+    st.download_button(
+        label="Download data as CSV",
+        data=df.to_csv(index=False).encode('utf-8'),
+        file_name=file_name,
+        mime='text/csv'
+    )
+
+
 def calculate_interval(df):
     # group by year and province, then substrac the max from the min
     return df.groupby(['year', 'Provincia']).agg({'Anual': lambda x: x.max() - x.min()}).rename(columns={'Anual': 'Intervalo'}).reset_index()
@@ -70,3 +80,11 @@ def clean_province_name(province):
         return clean_name.split('/')[1]
     return clean_name
 
+def get_fig_size(fig_size = (1, 0.6)):
+    with st.sidebar.expander("Tamaño de la figura"):
+        fig_size = float(fig_size[0]), float(fig_size[1])
+        height = st.slider("Ancho de la figura", min_value=0.1, max_value=1.0, value=fig_size[0], step=0.1)
+        width = st.slider("Alto de la figura", min_value=0.1, max_value=1.0, value=fig_size[1], step=0.1)
+        scale = st.slider("Escala de la figura", min_value=0.1, max_value=1.0, value=0.5, step=0.1)
+        scale *= 10
+    return (height*scale, width*scale)
